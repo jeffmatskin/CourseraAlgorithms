@@ -1,5 +1,8 @@
 import queue
 
+current_label = None
+order = {}
+
 def reverse_graph(g):
     rev_graph = {}
     for v in g.keys():
@@ -73,3 +76,49 @@ def BFS_undirected_connectivity(G):
             connected_components.append(search_results)
 
     return connected_components
+
+def DFS_looped(G, s):
+    explored = []
+    stack = [s]    
+    explored.append(s)
+    while len(stack) > 0:
+        v = stack.pop()
+        for w in G[v]:
+            if w not in explored:
+                explored.append(w)
+                stack.append(w)
+    return explored
+
+def DFS(G,s,explored=None):
+    if explored == None:
+        explored = []
+    explored.append(s)
+    for v in G[s]:
+        if v not in explored:
+            DFS(G,v,explored)
+    return explored    
+
+def DFS_sort(G,s,explored=None):
+    global current_label, order    
+    if explored == None:
+        explored = []
+    explored.append(s)
+    for v in G[s]:
+        if v not in explored:
+            DFS_sort(G,v,explored)
+    order[s] = current_label
+    current_label -=1
+    return explored
+
+def DFS_topological_sort(G):
+    global current_label, order    
+    current_label = len(G)
+    order = {}
+    outer_explored = []
+    for v in G.keys():
+        if v not in outer_explored:
+            explored = DFS_sort(G,v)
+            for w in explored:
+                if w not in outer_explored:
+                    outer_explored.append(w)
+    return order
