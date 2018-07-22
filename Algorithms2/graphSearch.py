@@ -1,7 +1,19 @@
 import queue
+import sys
+import time
+from itertools import groupby
+from collections import defaultdict
 
+sys.setrecursionlimit(10**6)
+
+
+finishing_time = 0
+finishing_times = None
+current_source_vertex = None
 current_label = None
-order = {}
+order = None
+leader = None
+explored = None
 
 def reverse_graph(g):
     rev_graph = {}
@@ -11,7 +23,9 @@ def reverse_graph(g):
                 rev_graph[w].append(v)
             else:
                 rev_graph[w] = [v]
-
+    for i in g.keys():
+        if i not in rev_graph.keys():
+            rev_graph[i] = []
     return rev_graph
 
 def undirected(g):
@@ -122,3 +136,67 @@ def DFS_topological_sort(G):
                 if w not in outer_explored:
                     outer_explored.append(w)
     return order
+
+def DFS_leaders(G,s,firstPass):
+    global finishing_time, finishing_times, leader, explored    
+    explored.append(s)
+    leader[s] = current_source_vertex
+    for v in G[s]:
+        if v not in explored:
+            DFS_leaders(G,v,firstPass)
+    if(firstPass):
+        finishing_time+=1
+        finishing_times[s]=finishing_time
+    return explored
+
+
+def kosaraju_two_pass(g):
+    global current_source_vertex, finishing_time, finishing_times, leader, explored
+    grev = reverse_graph(g)
+    explored = []
+    finishing_times = {}
+    finishing_time = 0    
+    leader = {}
+    #first pass on reverse
+    for i in range(max(g.keys()),0,-1):
+        if i not in explored:            
+            current_source_vertex = i
+            DFS_leaders(grev,i, True)
+    #second pass in order of leader vertices    
+    explored = []
+    
+    for j in range(max(g.keys()),0,-1):        
+        i = finishing_times[j]        
+        if i not in explored:
+            current_source_vertex = i
+            DFS_leaders(g,i,False)
+    return leader
+
+def findLargestConnectedComponents(g):
+    leaderList = kosaraju_two_pass(g)
+    leaderCounts = [0]*len(leaderList.keys())
+
+    for k in leaderList.keys():
+        leaderCounts[leaderList[k]-1]+=1
+    return sorted(leaderCounts,reverse=True)[0:5]
+
+def convert_toGraph(srcFile):
+    file = open(srcFile)
+    graph = {}
+    maxVertex = 0
+    for line in file:
+        row = [int(s) for s in line.split()]
+        if row[0] > maxVertex:
+            maxVertex = row[0]
+        if row[1] > maxVertex:
+            maxVertex = row[1]
+        if row[0] not in graph.keys():
+            graph[row[0]] = [row[1]]
+        else:
+            graph[row[0]].append(row[1])
+    for i in range(1,maxVertex):
+        if i not in graph.keys():
+            graph[i] = []
+    return graph
+
+

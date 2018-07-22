@@ -1,120 +1,51 @@
-import queue
-import sys
-
-class Node(object):
-
-    def __init__(self, vertex=None):
-        self.explored = False
-
-    def isExplored(self):
-        return self.__explored
-
-    def set_explored(self, explored):
-        self.__explored = explored        
-
-class Graph(object):
-
-    def __init__(self, graph_dict=None):
-        #inits a graph object.
-        #if no dict or none is given, 
-        #an empty dict will be used.
-        if graph_dict == None:
-            graph_dict = {}
-        self.__graph_dict = graph_dict
-        self.__vertex_explored = {}
-        self.mark_all_explored(False)
-
-    def vertices(self):
-        return list(self.__graph_dict.keys())
-
-    def edges(self):
-        return self.__generate_edges()
-
-    def add_vertex(self, vertex):
-        if vertex not in self.__graph_dict:
-            self.__graph_dict[vertex] = []
-    
-    def mark_explored(self, vertex, isExplored):
-        self.__vertex_explored[vertex] = isExplored
-
-    def mark_all_explored(self, explored):
-        for vertex in self.vertices():
-            self.__vertex_explored[vertex] = explored
-
-    def add_edge(self,edge):
-        edge = set(edge)
-        (vertex1, vertex2) = tuple(edge)
-        if vertex1 in self.__graph_dict:
-            self.__graph_dict[vertex1].append(vertex2)
-        else:
-            self.__graph_dict[vertex1] = [vertex2]
-
-    def __generate_edges(self):
-        edges = []
-        for vertex in self.__graph_dict:
-            for neighbour in self.__graph_dict[vertex]:
-                if {neighbour, vertex} not in edges:
-                    edges.append({vertex,neighbour})
-        return edges
-
-    def reverse_graph(self):
-        rev_graph = Graph()
-        for vertex in self.vertices():
-            rev_graph.add_vertex(vertex)
-            for w in self.__graph_dict[vertex]:
-                rev_graph.add_edge({w,vertex})
-        return rev_graph
+class Vertex:
+    def __init__(self, node):
+        self.id = node
+        self.adjacent = {}
     
     def __str__(self):
-        res = "vertices: "
-        for k in self.__graph_dict:
-            res+=str(k) + " "
-        res+= "\nedges: "
-        for edge in self.__generate_edges():
-            res+= str(edge) + " "
-        return res
+        return str(self.id) + " adjacent: " + str([x.id for x in self.adjacent])
+    
+    def add_neighbour(self, neighbour, weight=0):
+        self.adjacent[neighbour] = weight
 
-    def find_path(self, start_vertex, end_vertex, path=None):
-        if path == None:
-            path = []
-        graph = self.__graph_dict
-        path = path + [start_vertex]
-        if start_vertex == end_vertex:
-            return path
-        if start_vertex not in graph:
+    def get_connections(self):
+        return self.adjacent.keys()
+
+    def get_id(self):
+        return self.id
+
+    def get_weight(self, neighbour):
+        return self.adjacent[neighbour]
+
+class Graph:
+    def __init__(self):
+        self.vert_dict = {}
+        self.num_vertices = 0
+
+    def __iter__(self):
+        return iter(self.vert_dict.values())
+
+    def add_vertex(self, node):
+        self.num_vertices = self.num_vertices + 1
+        new_vertex = Vertex(node)
+        self.vert_dict[node] = new_vertex
+        return new_vertex
+
+    def get_vertex(self, n):
+        if n in self.vert_dict:
+            return self.vert_dict[n]
+        else:
             return None
-        for vertex in graph[start_vertex]:
-            if vertex not in path:
-                extended_path = self.find_path(vertex, end_vertex, path)
 
-                if extended_path:
-                    return extended_path
-        return None
+    def add_edge(self, frm, to, weight = 0):
+        if frm not in self.vert_dict.keys():
+            self.add_vertex(frm)
+        if to not in self.vert_dict.keys():
+            self.add_vertex(to)
 
-    def BFS_shortest_distance(self, start_vertex, end_vertex):
-        dist = {}
-        graph = self.__graph_dict
-        explored = self.__vertex_explored
-        self.mark_all_explored(False)
-        self.mark_explored(start_vertex, True)
-        Q = queue.Queue()
-        dist[start_vertex] = 0
-        if (start_vertex == end_vertex):
-            dist[end_vertex] = 0
-        else:
-            dist[end_vertex] = sys.maxsize
-        Q.put(start_vertex)        
-        while Q.empty() == False:
-            v = Q.get()
-            for w in graph[v]:
-                if (explored[w] == False):
-                    dist[w] = dist[v] + 1
-                    self.mark_explored(w, True)
-                    Q.put(w)
-        if (explored[end_vertex] == True):
-            return dist[end_vertex]
-        else:
-            return -1
-        
+        self.vert_dict[frm].add_neighbour(self.vert_dict[to], weight)
 
-        
+    def get_vertices(self):
+        return self.vert_dict.keys()
+
